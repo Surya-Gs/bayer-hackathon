@@ -1,4 +1,4 @@
-name: Build and Scan Microservice Images
+name: Build, Scan & Push to ECR
 
 on:
   push:
@@ -18,14 +18,35 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1   # Change if required
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker image for each microservice
+      - name: Build & Push Docker image to ECR
         run: |
-          IMAGE_NAME=${{ matrix.service }}:latest
-          echo "Building Docker image: $IMAGE_NAME"
-          cd src/${{ matrix.service }}
+          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          REGION="ap-south-1"
+          SERVICE="${{ matrix.service }}"
+          IMAGE_NAME="$AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$SERVICE:latest"
+
+          echo "Building Docker image for $SERVICE"
+          cd src/$SERVICE
+
+          # Build the image
           docker build -t $IMAGE_NAME .
-          echo "Successfully built image: $IMAGE_NAME"
-          echo "$IMAGE_NAME"
+
+          # Push to ECR
+          echo "Pushing image: $IMAGE_NAME"
+          docker push $IMAGE_NAME
+
+          echo "Successfully pushed $IMAGE_NAME to ECR"
