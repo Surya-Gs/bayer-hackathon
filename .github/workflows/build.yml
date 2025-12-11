@@ -32,6 +32,18 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        
+      - name: Create ECR Repository if not exists
+        run: |
+          REGION="ap-south-1"
+          SERVICE="${{ matrix.service }}"
+
+          if aws ecr describe-repositories --repository-names "$SERVICE" --region $REGION; then
+            echo "Repository $SERVICE already exists. Skipping creation."
+          else
+            echo "Creating repository $SERVICE"
+            aws ecr create-repository --repository-name "$SERVICE" --region $REGION
+          fi
 
       - name: Build & Push Docker image to ECR
         run: |
