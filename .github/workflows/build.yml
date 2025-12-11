@@ -28,3 +28,4 @@ jobs:
           cd src/${{ matrix.service }}
           docker build -t $IMAGE_NAME .
           echo "Successfully built image: $IMAGE_NAME"
+          echo "$IMAGE_NAME"
