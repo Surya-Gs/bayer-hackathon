@@ -1,4 +1,4 @@
-name: Build, Scan & Push to ECR
+name: Build, Scan & Push to Public ECR
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build-and-scan:
+  build-and-push:
     runs-on: ubuntu-latest
     environment: sample
 
@@ -24,33 +24,19 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-south-1   # Change if required
+          aws-region: us-east-1   # Public ECR login uses us-east-1
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+      - name: Login to Amazon Public ECR
+        run: |
+          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/h3d5d4q6
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        
-      - name: Create ECR Repository if not exists
-        run: |
-          REGION="ap-south-1"
-          SERVICE="${{ matrix.service }}"
 
-          if aws ecr describe-repositories --repository-names "$SERVICE" --region $REGION; then
-            echo "Repository $SERVICE already exists. Skipping creation."
-          else
-            echo "Creating repository $SERVICE"
-            aws ecr create-repository --repository-name "$SERVICE" --region $REGION
-          fi
-
-      - name: Build & Push Docker image to ECR
+      - name: Build & Push Docker image to Public ECR
         run: |
-          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-          REGION="ap-south-1"
           SERVICE="${{ matrix.service }}"
-          IMAGE_NAME="$AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$SERVICE:latest"
+          IMAGE_NAME="public.ecr.aws/h3d5d4q6/hackathon/repo:${SERVICE}-latest"
 
           echo "Building Docker image for $SERVICE"
           cd src/$SERVICE
@@ -58,8 +44,8 @@ jobs:
           # Build the image
           docker build -t $IMAGE_NAME .
 
-          # Push to ECR
+          # Push to Public ECR
           echo "Pushing image: $IMAGE_NAME"
           docker push $IMAGE_NAME
 
-          echo "Successfully pushed $IMAGE_NAME to ECR"
+          echo "Successfully pushed $IMAGE_NAME to Public ECR"
