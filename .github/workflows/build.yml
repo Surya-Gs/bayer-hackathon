@@ -21,11 +21,27 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # - name: Build Docker image for each microservice
+      #   run: |
+      #     IMAGE_NAME=${{ matrix.service }}:latest
+      #     echo "Building Docker image: $IMAGE_NAME"
+      #     cd src/${{ matrix.service }}
+      #     docker build -t $IMAGE_NAME .
+      #     echo "Successfully built image: $IMAGE_NAME"
+      #     echo "$IMAGE_NAME"
       - name: Build Docker image for each microservice
         run: |
-          IMAGE_NAME=${{ matrix.service }}:latest
-          echo "Building Docker image: $IMAGE_NAME"
-          cd src/${{ matrix.service }}
-          docker build -t $IMAGE_NAME .
-          echo "Successfully built image: $IMAGE_NAME"
-          echo "$IMAGE_NAME"
+            IMAGE_NAME=${{ matrix.service }}:latest
+            echo "Building Docker image: $IMAGE_NAME"
+            echo "Checking directory: src/${{ matrix.service }}"
+            
+            ls -R src || true
+            ls src/${{ matrix.service }} || { 
+              echo "Directory src/${{ matrix.service }} does not exist.";
+              exit 1; 
+            }
+        
+            cd src/${{ matrix.service }}
+            docker build -t $IMAGE_NAME .
+            echo "Successfully built image: $IMAGE_NAME"
+
