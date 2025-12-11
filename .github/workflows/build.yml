@@ -23,17 +23,8 @@ jobs:
 
       - name: Build Docker image for each microservice
         run: |
-          echo "Building image for: ${{ matrix.service }}"
+          IMAGE_NAME=${{ matrix.service }}:latest
+          echo "Building Docker image: $IMAGE_NAME"
           cd src/${{ matrix.service }}
-          docker build -t ${{ matrix.service }}:latest .
-
-      # - name: Install Trivy
-      #   uses: aquasecurity/trivy-action@master
-
-      # - name: Scan Docker image with Trivy
-      #   run: |
-      #     trivy image \
-      #       --severity HIGH,CRITICAL \
-      #       --exit-code 1 \
-      #       --ignore-unfixed \
-      #       ${{ matrix.service }}:latest
+          docker build -t $IMAGE_NAME .
+          echo "Successfully built image: $IMAGE_NAME"
