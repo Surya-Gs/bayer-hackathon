@@ -27,9 +27,9 @@ jobs:
           aws-region: ap-south-1   # Public ECR login uses us-east-1
 
       - name: Login to Amazon ECR
-        # id: login-ecr
-        # uses: aws-actions/amazon-ecr-login@v2
-        run: aws ecr-public get-login-password --region ap-south-1 | docker login --username AWS --password-stdin public.ecr.aws
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        # run: aws ecr-public get-login-password --region ap-south-1 | docker login --username AWS --password-stdin public.ecr.aws
 
 
       - name: Set up Docker Buildx
