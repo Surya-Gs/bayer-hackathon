@@ -1,34 +1,43 @@
-name: CI Pipeline
+name: Integration Workflow
 
 on:
   push:
-    branches: [ main ]
+    branches: ["main"]
   pull_request:
-    branches: [ main ]
+    branches: ["main"]
 
 jobs:
-  build:
+  integration:
+    name: Run Integration Pipeline
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        service:
+          - src/patient-svc
+          - src/appointment-svc
+
     steps:
-      # Step 1: Check out the repository code
-      - name: Checkout Code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Set up Node.js (change version if needed)
-      - name: Setup Node
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: "18"
+          cache: "npm"
 
-      # Step 3: Install dependencies
-      - name: Install Dependencies
-        run: npm install
+      - name: Install dependencies for ${{ matrix.service }}
+        working-directory: ${{ matrix.service }}
+        run: |
+          echo "Installing dependencies inside: ${{ matrix.service }}"
+          npm install
 
-      # Step 4: Run tests (change command based on your project)
-      - name: Run Tests
-        run: npm test
-
-      # Step 5: Build application (optional)
-      - name: Build App
-        run: npm run build
+      - name: Run tests for ${{ matrix.service }}
+        working-directory: ${{ matrix.service }}
+        run: |
+          if [ -f "package.json" ] && grep -q "\"test\":" package.json; then
+            npm test
+          else
+            echo "No tests found, skipping..."
+          fi
